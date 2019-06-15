@@ -1,0 +1,55 @@
+{% extends 'layout.html' %}
+
+{% block main %}
+<h2>客戶詳細資料</h5>
+<hr>
+<table class="table table-striped">
+  <tbody>
+    <tr>
+      <td>姓名</td>
+      <td>{{ customer.name }}</td>
+    </tr>
+    <tr>
+      <td>地址</td>
+      <td>{{ customer.address }}</td>
+    </tr>
+    <tr>
+      <td>電話</td>
+      <td>{{ customer.cell_phone }}</td>
+    </tr>
+    <tr>
+      <td>生日</td>
+      <td>{{ customer.birthday }}</td>
+    </tr>
+    <tr>
+      <td>性別</td>
+      <td>{{ customer.get_gender_display }}</td>
+    </tr>
+    <tr>
+      <td>身分證字號</td>
+      <td>{{ customer.roc_id }}</td>
+    </tr>
+    <tr>
+      <td>電子郵件</td>
+      <td>{{ customer.email }}</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>圖片</h2>
+<hr>
+<div class="row">
+  {% for image in images %}
+  <div>
+    <div><img src="{{ image.file_path }}" height="200" width="200"></div>
+    <div>{{ image.get_type_display }}</div>
+  </div>
+  {% empty %}
+  <p>沒有圖片~</p>
+  {% endfor %}
+</div>
+
+
+<a href="{% url 'customer:edit' customer.id %}" class="btn btn-info">編輯</a>
+
+{% endblock %}

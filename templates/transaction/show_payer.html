@@ -1,0 +1,11 @@
+{% extends 'layout.html' %}
+
+{% load humanize %}
+{% block main %}
+<h2>付款人資訊</h2>
+<p>姓名: {{ payer.name }}</p>
+<p>電話: {{ payer.phone }}</p>
+<p>身分證號: {{ payer.roc_id }}</p>
+<p>地址: {{ payer.address }}</p>
+
+{% endblock %}

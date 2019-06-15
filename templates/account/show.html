@@ -1,0 +1,60 @@
+{% extends 'layout.html' %}
+
+{% load humanize %}
+{% block main %}
+<h2>帳戶細項</h2>
+<hr>
+<p>餘額: {{ account.balance|floatformat:2|intcomma }}</p>
+<p>帳戶狀態: {{ account.get_status_display }}</p>
+<p>帳戶代碼: {{ account.code }}</p>
+<p>客戶: {{ account.customer.name }}</p>
+<p>幣別: {{ account.currency.name }}</p>
+
+<a href="{% url 'account:edit' account.id %}" class="btn btn-info">編輯</a>
+
+<h2 style="margin-top: 10px;">近一個月內交易紀錄</h2>
+<div class="pagination" style="margin-top: 10px;">
+  {% if transaction_records.has_previous %}
+  <a class="btn btn-primary" href="?page={{ transaction_records.previous_page_number }}">&lt;</a>
+  {% endif %}
+  <a class="btn btn-primary" href="" style="margin-left: 10px;margin-right: 10px;">{{ transaction_records.number }} /
+    {{ transaction_records.paginator.num_pages }}</a>
+  {% if transaction_records.has_next  %}
+  <a class="btn btn-primary" href="?page={{ transaction_records.next_page_number  }}">&gt;</a>
+  {% endif %}
+</div>
+<table class="table table-striped" style="margin-top: 10px;">
+  <thead>
+    <tr>
+      <th>時間</th>
+      <th>操作</th>
+      <th>從帳戶</th>
+      <th>到帳戶</th>
+      <th>金額</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for tr in transaction_records %}
+    <tr>
+      <td>{{ tr.date }}</td>
+      <td>{{ tr.get_operation_display }}</td>
+      {% if tr.from_account is None %}
+      <td>----</td>
+      {% else %}
+      <td><a href="{% url 'account:show' tr.from_account.id %}">{{ tr.from_account }}</a></td>
+      {% endif %}
+      {% if tr.to_account is None %}
+      <td>----</td>
+      {% else %}
+      <td><a href="{% url 'account:show' tr.to_account.id %}">{{ tr.to_account }}</a></td>
+      {% endif %}
+      <td align="right">{{ tr.amount|floatformat:2|intcomma }}</td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="5" class="text-center">沒有交易紀錄～</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

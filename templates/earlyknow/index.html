@@ -1,0 +1,212 @@
+{% extends "layout.html" %}
+
+{% load humanize %}
+{% block main %}
+<h2 class="mb-5">預警系統</h2>
+
+<h5>近一個月內帳戶存款金額高於100萬</h5>
+<div class="row">
+    <table class="table table-striped col-12 col-lg-6">
+        <thead>
+            <tr>
+                <th>客戶</th>
+                <th>金額</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for warning in account_amount_warnings %}
+            <tr>
+                <td>{{ warning.to_account__customer_id__name }}</td>
+                <td>{{ warning.account_amount|floatformat:2|intcomma }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" class="text-center">沒有預警訊息～</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <canvas id="accountAmountChart" class="col-12 col-lg-6"></canvas>
+</div>
+
+<h5>近一個月內帳戶存款次數高於10次</h5>
+<div class="row">
+    <table class="table table-striped col-12 col-lg-6">
+        <thead>
+            <tr>
+                <th>客戶</th>
+                <th>次數</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for warning in account_count_warnings %}
+            <tr>
+                <td>{{ warning.to_account__customer_id__name }}</td>
+                <td>{{ warning.account_count }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" class="text-center">沒有預警訊息～</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <canvas id="accountCountChart" class="col-12 col-lg-6"></canvas>
+</div>
+
+<h5>近一個月內同地址存款金額高於100萬</h5>
+<div class="row">
+    <table class="table table-striped col-12 col-lg-6">
+        <thead>
+            <tr>
+                <th>地址</th>
+                <th>金額</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for warning in address_amount_warnings %}
+            <tr>
+                <td>{{ warning.to_account__customer_id__address }}</td>
+                <td>{{ warning.address_amount|floatformat:2|intcomma }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" class="text-center">沒有預警訊息～</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <canvas id="addressAmountChart" class="col-12 col-lg-6"></canvas>
+</div>
+
+<h5>近一個月內同地址存款次數高於10次</h5>
+<div class="row">
+    <table class="table table-striped col-12 col-lg-6">
+        <thead>
+            <tr>
+                <th>地址</th>
+                <th>次數</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for warning in address_count_warnings %}
+            <tr>
+                <td>{{ warning.to_account__customer_id__address }}</td>
+                <td>{{ warning.address_count }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" class="text-center">沒有預警訊息～</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <canvas id="addressCountChart" class="col-12 col-lg-6"></canvas>
+</div>
+
+<h5>一周內每日存款總額圖</h5>
+<div class="row">
+    <table class="table table-striped col-12 col-lg-6">
+        <thead>
+            <tr>
+                <th>日期</th>
+                <th>金額</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in days_transation_record %}
+            <tr>
+                <td>{{ record.date_date }}</td>
+                <td>{{ record.sum_amount|floatformat:2|intcomma }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" class="text-center">沒有預警訊息～</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <canvas id="daysTransationRecordChart" class="col-12 col-lg-6"></canvas>
+</div>
+
+<h5>近一個月內存款排名前10名</h5>
+<div class="row">
+    <table class="table table-striped col-12 col-lg-6">
+        <thead>
+            <tr>
+                <th>客戶</th>
+                <th>總金額</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in top10_transation_record %}
+            <tr>
+                <td>{{ record.to_account__customer_id__name }}</td>
+                <td>{{ record.sum_amount|floatformat:2|intcomma }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" class="text-center">沒有預警訊息～</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <canvas id="top10TransationRecordChart" class="col-12 col-lg-6"></canvas>
+</div>
+{% endblock %}
+
+
+{% block extra_script %}
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"
+    integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js"></script>
+<script type="text/javascript">
+    $.get('{% url "earlyknow:account_amount_chart_json" %}', function (data) {
+        var ctx = $('#accountAmountChart').get(0).getContext('2d');
+        new Chart(ctx, {
+            type: 'bar', data: data
+        });
+    });
+
+    $.get('{% url "earlyknow:account_count_chart_json" %}', function (data) {
+        var ctx = $('#accountCountChart').get(0).getContext('2d');
+        new Chart(ctx, {
+            type: 'bar', data: data
+        });
+    });
+
+    $.get('{% url "earlyknow:address_amount_chart_json" %}', function (data) {
+        var ctx = $('#addressAmountChart').get(0).getContext('2d');
+        new Chart(ctx, {
+            type: 'bar', data: data
+        });
+    });
+
+    $.get('{% url "earlyknow:address_count_chart_json" %}', function (data) {
+        var ctx = $('#addressCountChart').get(0).getContext('2d');
+        new Chart(ctx, {
+            type: 'bar', data: data
+        });
+    });
+
+    $.get('{% url "earlyknow:days_transation_record_chart_json" %}', function (data) {
+        var ctx = $('#daysTransationRecordChart').get(0).getContext('2d');
+        new Chart(ctx, {
+            type: 'line', data: data
+        });
+    });
+
+    $.get('{% url "earlyknow:top10_transation_record_chart_json" %}', function (data) {
+        var ctx = $('#top10TransationRecordChart').get(0).getContext('2d');
+        new Chart(ctx, {
+            type: 'bar', data: data
+        });
+    });
+</script>
+{% endblock %}

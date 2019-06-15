@@ -1,0 +1,24 @@
+*{
+  font-family: sans-serif;
+  list-style: none;
+}
+
+.sidebar-container{
+  position: fixed;
+  background-color: #9b59b6;
+  height: 100%;
+  width: 200px;
+}
+
+.sidebar-item{
+  display: block;
+  color: white;
+  font-size: 16px;
+  padding: 16px;
+}
+
+.sidebar-item:hover{
+  color: white;
+  background-color: #8e44ad;
+  text-decoration: none;
+}

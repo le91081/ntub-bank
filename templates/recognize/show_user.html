@@ -1,0 +1,16 @@
+{% extends "layout.html" %}
+
+{% block main %}
+
+<h2>圖片</h2>
+<hr>
+<div class="row">
+    {% for image_base64 in images_data.pictures %}
+    <div>
+        <div><img src="data:;base64,{{ image_base64 }}"></div>
+    </div>
+    {% empty %}
+    <p>沒有圖片~</p>
+    {% endfor %}
+</div>
+{% endblock %}

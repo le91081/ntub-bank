@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+
+{% block main %}
+<h5>監視器使用者列表</h5>
+<table class="table table-striped" style="margin-top: 10px;">
+    <thead>
+        <tr>
+            <th>UUID</th>
+            <th>名稱</th>
+            <th>組織</th>
+            <th>監視器群組</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in user_list_data.namelist %}
+        <tr>
+            <td><a href="{% url 'recognize:show_user' user.UUID %}">{{ user.UUID }}</a></td>
+            <td>{{ user.info.name }}</td>
+            <td>{{ user.info.organization }}</td>
+            <td>{{ user.info.group }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4" class="text-center">沒有使用者～</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+
+</table>
+
+{% endblock %}

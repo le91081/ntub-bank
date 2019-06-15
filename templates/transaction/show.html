@@ -1,0 +1,15 @@
+{% extends 'layout.html' %}
+
+{% load humanize %}
+{% block main %}
+<h2>交易紀錄細項</h2>
+<p>操作: {{ transaction_record.get_operation_display }}</p>
+<p>金額: {{ transaction_record.amount|floatformat:2|intcomma }}</p>
+<p>來源帳戶: {{ transaction_record.from_account }}</p>
+<p>目標帳戶: {{ transaction_record.to_account }}</p>
+<p>付款人: {{ transaction_record.payer }}</p>
+<p>負責人: {{ transaction_record.user }}</p>
+<p>備註: {{ transaction_record.remark }}</p>
+<p>交易時間: {{ transaction_record.date }}</p>
+
+{% endblock %}

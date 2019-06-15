@@ -1,0 +1,40 @@
+{% extends 'layout.html' %}
+
+{% block main %}
+<h2>客戶</h2>
+<a class="btn btn-primary" href="{% url 'customer:add' %}" role="button">新增</a>
+
+<div class="pagination" style="margin-top: 10px;">
+  {% if customers.has_previous %}
+  <a class="btn btn-primary" href="?page={{ customers.previous_page_number }}">&lt;</a>
+  {% endif %}
+  <a class="btn btn-primary" href="" style="margin-left: 10px;margin-right: 10px;">{{ customers.number }} /
+    {{ customers.paginator.num_pages }}</a>
+  {% if customers.has_next  %}
+  <a class="btn btn-primary" href="?page={{ customers.next_page_number  }}">&gt;</a>
+  {% endif %}
+</div>
+<table class="table table-striped" style="margin-top: 10px;">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>名稱</th>
+      <th>地址</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for customer in customers %}
+    <tr>
+      <td>{{ customer.id }}</td>
+      <td><a href="{% url 'customer:show' customer.id %}">{{ customer.name }}</a></td>
+      <td>{{ customer.address }}</td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="3" class="text-center">沒有客戶～</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+
+</table>
+{% endblock %}

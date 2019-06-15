@@ -1,0 +1,21 @@
+{% extends 'layout.html' %}
+
+{% block main %}
+<hr>
+<table class="table table-striped">
+  <tbody>
+    <tr>
+      <td>使用者名稱</td>
+      <td>{{ user.username }}</td>
+    </tr>
+    <tr>
+      <td>最後登入</td>
+      <td>{{ user.last_login }}</td>
+    </tr>
+    <tr>
+      <td>註冊日期</td>
+      <td>{{ user.date_joined }}</td>
+    </tr>
+  </tbody>
+</table>
+{% endblock %}

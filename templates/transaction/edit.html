@@ -1,0 +1,28 @@
+{% extends 'layout.html' %}
+{% load bootstrap4 %}
+{% block main %}
+<div class="row">
+  <div class="col">
+    <h2>更新交易紀錄</h2>
+    <hr>
+
+    {% include 'shared/_form.html' %}
+
+
+    {% if monitor_info %}
+    <h2>監視器最新畫面</h2>
+    <hr>
+    {{ monitor_info.timestamp }}
+    <div class="row">
+      <img src="data:;base64,{{ monitor_info.snapshot }}" height="450" width="600">
+    </div>
+    {% for face in monitor_info.faces %}
+    <p>{{ face.organization }}-{{ face.name }}</p>
+    {% for level in face.confidence_level %}
+    <p>*{{ level.name }}: {{ level.score }}</p>
+    {% endfor %}
+    {% endfor %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

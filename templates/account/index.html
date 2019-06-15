@@ -1,0 +1,48 @@
+{% extends 'layout.html' %}
+
+{% load humanize %}
+{% block main %}
+<h2>帳戶</h2>
+<a class="btn btn-primary" href="{% url 'account:add' %}" role="button">新增</a>
+<div class="pagination" style="margin-top: 10px;">
+  {% if accounts.has_previous %}
+  <a class="btn btn-primary" href="?page={{ accounts.previous_page_number }}">&lt;</a>
+  {% endif %}
+  <a class="btn btn-primary" href="" style="margin-left: 10px;margin-right: 10px;">{{ accounts.number }} /
+    {{ accounts.paginator.num_pages }}</a>
+  {% if accounts.has_next  %}
+  <a class="btn btn-primary" href="?page={{ accounts.next_page_number  }}">&gt;</a>
+  {% endif %}
+</div>
+<table class="table table-striped" style="margin-top: 10px;">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>帳戶代碼</th>
+      <th>客戶</th>
+      <th>幣別</th>
+      <th>餘額</th>
+      <th>帳戶狀態</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for account in accounts %}
+    <tr>
+      <td>{{ account.id }}</td>
+      <td><a href="{% url 'account:show' account.id %}">{{ account.code }}</a></td>
+      <td>{{ account.customer.name }}</td>
+      <td>{{ account.currency.name }}</td>
+      <td align="right">{{ account.balance|floatformat:2|intcomma }}</td>
+      <td>{{ account.get_status_display }}</td>
+      <td><a href="{% url 'account:edit' account.id %}" class="btn btn-info">編輯</a></td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="7" class="text-center">沒有帳戶～</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+
+</table>
+{% endblock %}
