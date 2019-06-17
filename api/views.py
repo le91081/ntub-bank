@@ -10,6 +10,7 @@ from customer.models import City, District, Customer, CustomerImage
 from account.models import Currency, Account
 from transaction.models import Payer, TransactionRecord
 from blacklist.models import Blacklist
+from alertlog.models import AlertLog
 from operator import itemgetter
 from decimal import *
 
@@ -63,7 +64,11 @@ def customer_create(request):
         addrRatio = fuzz.partial_ratio(man.address, params['address'])
         print(nameRatio, addrRatio, nationRatio)
         if (nameRatio > 70 or addrRatio > 80 or nationRatio > 90):
-            isBlack = True
+            log = AlertLog()
+            log.name = params['name']
+            log.operate = '開戶'
+            log.reason = '疑似為高風險或黑名單人物'
+            log.save()
             return common_response(data, message='黑名單人物')
 
     try:
@@ -79,7 +84,7 @@ def customer_create(request):
             customer.district = distrcit
             customer.password = get_sha256_value(params['cell_phone'])
             customer.email = params['email']
-            customer.save()
+            #customer.save()
             data['id'] = customer.id
 
             # 產生帳戶號碼
@@ -97,7 +102,7 @@ def customer_create(request):
             currency_list = Currency.objects.filter(id=1)
             if len(currency_list) != 0:
                 account.currency = currency_list[0]
-            account.save()
+            #account.save()
 
         return common_response(data)
     except Exception as e:

@@ -2,9 +2,14 @@ import requests
 import json
 
 
-url = 'http://192.168.10.116/cgibin/ApiProxy.cgi'
+# url = 'http://192.168.10.116/cgibin/ApiProxy.cgi'
+# username = 'admin'
+# password = 'admin'
+
+url = 'http://120.97.23.31/cgibin/ApiProxy.cgi'
 username = 'admin'
-password = 'admin'
+password = 'Ntubaml6662'
+
 modulename = 'com.avc.enrollservice'
 
 

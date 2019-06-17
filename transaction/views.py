@@ -6,9 +6,11 @@ from django.db import transaction
 
 from .models import Payer, TransactionRecord
 from .forms import TransactionRecordForm
-
+from alertlog.models import AlertLog
+from blacklist.models import Blacklist
 from core.service import advan_service
-
+from fuzzywuzzy import fuzz
+from fuzzywuzzy import process
 from datetime import datetime
 import time
 
@@ -60,12 +62,39 @@ def add(request):
 def edit(request, pk):
     transaction_record = get_object_or_404(TransactionRecord, pk=pk)
     before_operation = transaction_record.operation  # 修改前的operation
+
     form = TransactionRecordForm(
         request.POST or None, instance=transaction_record)
 
     if form.is_valid():
-        after_operation = form.cleaned_data['operation']  # 修改後的operation
 
+        payer = Payer.objects.get(id=transaction_record.payer_id)
+        blacklist = Blacklist.objects.all()
+
+        if transaction_record.amount > 500000:  # 匯款金額超過50萬
+            messages.error(request, '匯款金額超過50萬且未通過KYC審查')
+            log = AlertLog()
+            log.name = payer
+            log.operate = '匯款'
+            log.reason = '匯款金額超過50萬且未通過KYC審查'
+            log.save()
+            return redirect('transaction:index')
+
+        for man in blacklist: # 黑名單審查
+            nameRatio = fuzz.partial_ratio(man.name, payer.name)
+            nationRatio = fuzz.partial_ratio(
+                man.nationality, payer.nationality)
+            addrRatio = fuzz.partial_ratio(man.address, payer.address)
+            if (nameRatio > 70 or addrRatio > 80 or nationRatio > 90):
+                log = AlertLog()
+                log.name = payer.name
+                log.operate = '匯款'
+                log.reason = '疑似為高風險或黑名單人物'
+                log.save()
+                messages.error(request, '疑似為高風險或黑名單人物')
+                return redirect('transaction:index')
+
+        after_operation = form.cleaned_data['operation']  # 修改後的operation
         with transaction.atomic():
             # 匯款, 由未完成到已完成
             if before_operation == TransactionRecord.OPERATION_REMITTANCE_NOT_COMPLETED and after_operation == TransactionRecord.OPERATION_REMITTANCE_COMPLETED:
@@ -79,7 +108,6 @@ def edit(request, pk):
     # 取得近5秒的監視器畫面
     timeslot_end = time.time() * 1000  # 轉毫秒
     timeslot_start = timeslot_end - 10000  # 十秒前
-
     json = advan_service.face_recognition_event(timeslot_start, timeslot_end)
 
     if json['status'] == 'SUCCESS':
