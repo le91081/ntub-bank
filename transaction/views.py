@@ -11,8 +11,11 @@ from blacklist.models import Blacklist
 from core.service import advan_service
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
-from datetime import datetime
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 import time
+
+LIMIT_MONEY = 500000
 
 
 @login_required
@@ -71,7 +74,8 @@ def edit(request, pk):
         payer = Payer.objects.get(id=transaction_record.payer_id)
         blacklist = Blacklist.objects.all()
 
-        if transaction_record.amount > 500000:  # 匯款金額超過50萬
+        # 審查匯款金額是否超過50萬
+        if transaction_record.amount > LIMIT_MONEY:
             messages.error(request, '匯款金額超過50萬且未通過KYC審查')
             log = AlertLog()
             log.name = payer
@@ -80,7 +84,8 @@ def edit(request, pk):
             log.save()
             return redirect('transaction:index')
 
-        for man in blacklist: # 黑名單審查
+        # 黑名單審查
+        for man in blacklist:
             nameRatio = fuzz.partial_ratio(man.name, payer.name)
             nationRatio = fuzz.partial_ratio(
                 man.nationality, payer.nationality)
@@ -93,6 +98,18 @@ def edit(request, pk):
                 log.save()
                 messages.error(request, '疑似為高風險或黑名單人物')
                 return redirect('transaction:index')
+
+        # 洗錢防制檢查 -- 客戶需篩選
+        money, count = get_recent_money_sum(5, payer.id)
+        llc = get_money_count_by_month(5, payer.id)
+        print(money, count, llc)
+        if (money + transaction_record.amount) > (LIMIT_MONEY*2) or count > 5 or llc > 5:
+            log = AlertLog()
+            log.name = payer.name
+            log.operate = '匯款'
+            log.reason = '未通過洗錢防制檢查'
+            log.save()
+            messages.error(request, '未通過洗錢防制檢查')
 
         after_operation = form.cleaned_data['operation']  # 修改後的operation
         with transaction.atomic():
@@ -108,16 +125,16 @@ def edit(request, pk):
     # 取得近5秒的監視器畫面
     timeslot_end = time.time() * 1000  # 轉毫秒
     timeslot_start = timeslot_end - 10000  # 十秒前
-    json = advan_service.face_recognition_event(timeslot_start, timeslot_end)
+    #json = advan_service.face_recognition_event(timeslot_start, timeslot_end)
 
-    if json['status'] == 'SUCCESS':
-        timeslot_list = json['timeslot']  # 看要不要先依照時間排序抓最新(這邊沒做)
-        if timeslot_list is not None:  # 不是空的
-            timeslot = timeslot_list[0]  # 直接抓第一個物件
-            monitor_info['timestamp'] = datetime.fromtimestamp(
-                timeslot['timestamp'] / 1000)  # 時間
-            monitor_info['snapshot'] = timeslot['snapshot']  # 當下畫面
-            monitor_info['faces'] = timeslot['faces']  # 臉
+    # if json['status'] == 'SUCCESS':
+    #     timeslot_list = json['timeslot']  # 看要不要先依照時間排序抓最新(這邊沒做)
+    #     if timeslot_list is not None:  # 不是空的
+    #         timeslot = timeslot_list[0]  # 直接抓第一個物件
+    #         monitor_info['timestamp'] = datetime.fromtimestamp(
+    #             timeslot['timestamp'] / 1000)  # 時間
+    #         monitor_info['snapshot'] = timeslot['snapshot']  # 當下畫面
+    #         monitor_info['faces'] = timeslot['faces']  # 臉
 
     return render(request, 'transaction/edit.html', {
         'form': form,
@@ -129,3 +146,22 @@ def edit(request, pk):
 def show_payer(request, pk):
     payer = get_object_or_404(Payer, pk=pk)
     return render(request, 'transaction/show_payer.html', {'payer': payer})
+
+
+def get_recent_money_sum(day, payer_id):
+    print(payer_id)
+    now = datetime.now()
+    lst = TransactionRecord.objects.filter(
+        date__range=(now-timedelta(day), now), payer_id=payer_id, operation=4)
+    total = sum(n.amount for n in lst)
+    count = len(TransactionRecord.objects.filter(
+        date__range=(now-timedelta(day), now), payer_id=payer_id))
+    return total, count
+
+
+def get_money_count_by_month(month, payer_id):
+    now = datetime.now()
+    n_month_ago = now - relativedelta(months=month)
+    count = len(TransactionRecord.objects.filter(date__range=(
+        n_month_ago, now), payer_id=payer_id, amount__gte=LIMIT_MONEY-100000))
+    return count
