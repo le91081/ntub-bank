@@ -17,11 +17,12 @@
 <table class="table table-striped" style="margin-top: 10px;">
   <thead>
     <tr>
-      <th>#</th>
-      <th>帳戶代碼</th>
+      {% comment %} <th>#</th> {% endcomment %}
       <th>客戶</th>
+      <th>身分證字號</th>
+      <th>帳戶代碼</th>
       <th>幣別</th>
-      <th>餘額</th>
+      {% comment %} <th>餘額</th> {% endcomment %}
       <th>帳戶狀態</th>
       <th></th>
     </tr>
@@ -29,11 +30,12 @@
   <tbody>
     {% for account in accounts %}
     <tr>
-      <td>{{ account.id }}</td>
+      {% comment %} <td>{{ account.id }}</td> {% endcomment %}
+      <td><a href="{% url 'customer:show' account.customer.id %}">{{ account.customer.name }}</a></td>
+      <td>{{ account.customer.roc_id }}</td>
       <td><a href="{% url 'account:show' account.id %}">{{ account.code }}</a></td>
-      <td>{{ account.customer.name }}</td>
       <td>{{ account.currency.name }}</td>
-      <td align="right">{{ account.balance|floatformat:2|intcomma }}</td>
+      {% comment %} <td align="right">{{ account.balance|floatformat:2|intcomma }}</td> {% endcomment %}
       <td>{{ account.get_status_display }}</td>
       <td><a href="{% url 'account:edit' account.id %}" class="btn btn-info">編輯</a></td>
     </tr>

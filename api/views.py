@@ -63,7 +63,7 @@ def customer_create(request):
         nationRatio = fuzz.partial_ratio(man.nationality, params['nation'])
         addrRatio = fuzz.partial_ratio(man.address, params['address'])
         print(nameRatio, addrRatio, nationRatio)
-        if (nameRatio > 70 or addrRatio > 80 or nationRatio > 90):
+        if (nameRatio > 70 or addrRatio > 80 or (nameRatio + nationRatio) > 160):
             log = AlertLog()
             log.name = params['name']
             log.operate = '開戶'
@@ -84,7 +84,7 @@ def customer_create(request):
             customer.district = distrcit
             customer.password = get_sha256_value(params['cell_phone'])
             customer.email = params['email']
-            #customer.save()
+            customer.save()
             data['id'] = customer.id
 
             # 產生帳戶號碼
@@ -102,7 +102,7 @@ def customer_create(request):
             currency_list = Currency.objects.filter(id=1)
             if len(currency_list) != 0:
                 account.currency = currency_list[0]
-            #account.save()
+            account.save()
 
         return common_response(data)
     except Exception as e:
@@ -348,13 +348,18 @@ def remittance(request):
     data = {}
     try:
         with transaction.atomic():
-            # 新增付款人資訊
+
+            roc_ids = [x.roc_id for x in Payer.objects.all()]
             payer = Payer()
-            payer.name = params['payer']
-            payer.phone = params['payer_phone']
-            payer.roc_id = params['payer_roc_id']
-            payer.address = params['payer_address']
-            payer.save()
+            if params['payer_roc_id'] not in roc_ids:
+                # 新增付款人資訊
+                payer.name = params['payer']
+                payer.phone = params['payer_phone']
+                payer.roc_id = params['payer_roc_id']
+                payer.address = params['payer_address']
+                payer.save()
+            else:
+                payer = Payer.objects.get(roc_id=params['payer_roc_id'])
 
             # 查詢帳戶
             account = Account.objects.get(code=params['account_code'])

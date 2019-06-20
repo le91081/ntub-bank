@@ -2,6 +2,7 @@ from django.db import models
 from account.models import Account
 from django.contrib.auth.models import User
 from django.core.validators import MaxValueValidator, MinValueValidator
+from datetime import datetime
 
 
 class Payer(models.Model):
@@ -20,6 +21,7 @@ class Payer(models.Model):
 
 
 class TransactionRecord(models.Model):
+    NOW = datetime.now()
     OPERATION_DEPOSIT = 0
     OPERATION_WITHDRAWAL = 1
     OPERATION_TRANSFER = 2
@@ -60,9 +62,11 @@ class TransactionRecord(models.Model):
                               null=True,
                               blank=True,
                               max_length=100)
-    date = models.DateTimeField('交易時間')
-    day = models.DateTimeField('時間維度(日)', null=True, blank=True)
-    time = models.TimeField('時間維度(時)', null=True, blank=True)
+    date = models.DateTimeField('交易時間', default=NOW.strftime("%Y-%m-%d %H:%M:%S"))
+    day = models.DateTimeField(
+        '時間維度(日)', default=NOW.date().strftime("%Y-%m-%d"), null=True, blank=True)
+    time = models.TimeField(
+        '時間維度(時)', default=NOW.time().strftime("%H:%M:%S"), null=True, blank=True)
     isImport = models.IntegerField('匯入識別', default=0,
                                    validators=[
                                        MaxValueValidator(1),
@@ -105,9 +109,9 @@ class TransactionRecord(models.Model):
         obj['operation_text'] = self.OPERATION_CHOICES[self.operation][1]
         obj['from_account_code'] = self.from_account.code if self.from_account is not None else ''
         obj['to_account_code'] = self.to_account.code if self.to_account is not None else ''
-        obj['date'] = self.date.strftime("%Y-%m-%d %H:%M:%S")
-        obj['day'] = self.date.strftime("%Y-%m-%d")
-        obj['time'] = self.date.strftime("%H:%M:%S")
+        obj['date'] = self.date
+        obj['day'] = self.day
+        obj['time'] = self.time
         obj['isImport'] = self.isImport
         obj['isExport'] = self.isExport
         obj['import_bank'] = self.import_bank

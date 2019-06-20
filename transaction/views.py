@@ -76,12 +76,8 @@ def edit(request, pk):
 
         # 審查匯款金額是否超過50萬
         if transaction_record.amount > LIMIT_MONEY:
+            log_alert(payer.name, '匯款', '匯款金額超過50萬且未通過KYC審查')
             messages.error(request, '匯款金額超過50萬且未通過KYC審查')
-            log = AlertLog()
-            log.name = payer
-            log.operate = '匯款'
-            log.reason = '匯款金額超過50萬且未通過KYC審查'
-            log.save()
             return redirect('transaction:index')
 
         # 黑名單審查
@@ -90,12 +86,8 @@ def edit(request, pk):
             nationRatio = fuzz.partial_ratio(
                 man.nationality, payer.nationality)
             addrRatio = fuzz.partial_ratio(man.address, payer.address)
-            if (nameRatio > 70 or addrRatio > 80 or nationRatio > 90):
-                log = AlertLog()
-                log.name = payer.name
-                log.operate = '匯款'
-                log.reason = '疑似為高風險或黑名單人物'
-                log.save()
+            if (nameRatio > 70 or addrRatio > 80 or (nameRatio + nationRatio) > 160):
+                log_alert(payer.name, '匯款', '疑似為高風險或黑名單人物')
                 messages.error(request, '疑似為高風險或黑名單人物')
                 return redirect('transaction:index')
 
@@ -103,13 +95,15 @@ def edit(request, pk):
         money, count = get_recent_money_sum(5, payer.id)
         llc = get_money_count_by_month(5, payer.id)
         print(money, count, llc)
-        if (money + transaction_record.amount) > (LIMIT_MONEY*2) or count > 5 or llc > 5:
-            log = AlertLog()
-            log.name = payer.name
-            log.operate = '匯款'
-            log.reason = '未通過洗錢防制檢查'
-            log.save()
-            messages.error(request, '未通過洗錢防制檢查')
+        if (money + transaction_record.amount) > (LIMIT_MONEY*2):
+            log_alert(payer.name, '匯款', '未通過洗錢防制檢查(匯款金額加總超過限額)')
+            messages.error(request, '未通過洗錢防制檢查(匯款金額加總超過限額)')
+        elif count > 5:
+            log_alert(payer.name, '匯款', '未通過洗錢防制檢查(匯款次數超過警戒次數)')
+            messages.error(request, '未通過洗錢防制檢查(匯款次數超過警戒次數)')
+        elif llc > 5:
+            log_alert(payer.name, '匯款', '未通過洗錢防制檢查(多次匯款略低於限制金額)')
+            messages.error(request, '未通過洗錢防制檢查(多次匯款略低於限制金額)')
 
         after_operation = form.cleaned_data['operation']  # 修改後的operation
         with transaction.atomic():
@@ -165,3 +159,11 @@ def get_money_count_by_month(month, payer_id):
     count = len(TransactionRecord.objects.filter(date__range=(
         n_month_ago, now), payer_id=payer_id, amount__gte=LIMIT_MONEY-100000))
     return count
+
+
+def log_alert(name, operation, reason):
+    log = AlertLog()
+    log.name = name
+    log.operate = operation
+    log.reason = reason
+    log.save()

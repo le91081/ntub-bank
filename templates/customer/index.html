@@ -19,6 +19,8 @@
     <tr>
       <th>#</th>
       <th>名稱</th>
+      <th>電話</th>
+      <th>生日</th>
       <th>地址</th>
     </tr>
   </thead>
@@ -27,6 +29,8 @@
     <tr>
       <td>{{ customer.id }}</td>
       <td><a href="{% url 'customer:show' customer.id %}">{{ customer.name }}</a></td>
+      <td>{{ customer.cell_phone }}</td>
+      <td>{{ customer.birthday }}</td>
       <td>{{ customer.address }}</td>
     </tr>
     {% empty %}
