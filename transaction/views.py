@@ -74,39 +74,47 @@ def edit(request, pk):
         payer = Payer.objects.get(id=transaction_record.payer_id)
         blacklist = Blacklist.objects.all()
 
-        # 審查匯款金額是否超過50萬
-        if transaction_record.amount > LIMIT_MONEY:
-            log_alert(payer.name, '匯款', '匯款金額超過50萬且未通過KYC審查')
-            messages.error(request, '匯款金額超過50萬且未通過KYC審查')
-            return redirect('transaction:index')
-
-        # 黑名單審查
-        for man in blacklist:
-            nameRatio = fuzz.partial_ratio(man.name, payer.name)
-            nationRatio = fuzz.partial_ratio(
-                man.nationality, payer.nationality)
-            addrRatio = fuzz.partial_ratio(man.address, payer.address)
-            if (nameRatio > 70 or addrRatio > 80 or (nameRatio + nationRatio) > 160):
-                log_alert(payer.name, '匯款', '疑似為高風險或黑名單人物')
-                messages.error(request, '疑似為高風險或黑名單人物')
+        with transaction.atomic():
+            after_operation = form.cleaned_data['operation']  # 修改後的operation
+            if before_operation == TransactionRecord.OPERATION_REMITTANCE_NOT_COMPLETED and after_operation == TransactionRecord.OPERATION_REMITTANCE_REJECT:
+                form.save()
+                messages.success(request, '更新成功')
                 return redirect('transaction:index')
 
-        # 洗錢防制檢查 -- 客戶需篩選
-        money, count = get_recent_money_sum(5, payer.id)
-        llc = get_money_count_by_month(5, payer.id)
-        print(money, count, llc)
-        if (money + transaction_record.amount) > (LIMIT_MONEY*2):
-            log_alert(payer.name, '匯款', '未通過洗錢防制檢查(匯款金額加總超過限額)')
-            messages.error(request, '未通過洗錢防制檢查(匯款金額加總超過限額)')
-        elif count > 5:
-            log_alert(payer.name, '匯款', '未通過洗錢防制檢查(匯款次數超過警戒次數)')
-            messages.error(request, '未通過洗錢防制檢查(匯款次數超過警戒次數)')
-        elif llc > 5:
-            log_alert(payer.name, '匯款', '未通過洗錢防制檢查(多次匯款略低於限制金額)')
-            messages.error(request, '未通過洗錢防制檢查(多次匯款略低於限制金額)')
 
-        after_operation = form.cleaned_data['operation']  # 修改後的operation
-        with transaction.atomic():
+            # 審查匯款金額是否超過50萬
+            if transaction_record.amount > LIMIT_MONEY:
+                log_alert(payer.name, '匯款', '匯款金額超過50萬且未通過KYC審查')
+                messages.error(request, '匯款金額超過50萬且未通過KYC審查')
+                return redirect('transaction:index')
+
+            # 黑名單審查
+            for man in blacklist:
+                nameRatio = fuzz.partial_ratio(man.name, payer.name)
+                nationRatio = fuzz.partial_ratio(
+                    man.nationality, payer.nationality)
+                addrRatio = fuzz.partial_ratio(man.address, payer.address)
+                if (nameRatio > 70 or addrRatio > 80 or (nameRatio + nationRatio) > 160):
+                    log_alert(payer.name, '匯款', '疑似為高風險或黑名單人物')
+                    messages.error(request, '疑似為高風險或黑名單人物')
+                    return redirect('transaction:index')
+
+            # 洗錢防制檢查 -- 客戶需篩選
+            money, count = get_recent_money_sum(5, payer.id)
+            llc = get_money_count_by_month(5, payer.id)
+            print(money, count, llc)
+            if (money + transaction_record.amount) > (LIMIT_MONEY*2):
+                log_alert(payer.name, '匯款', '未通過洗錢防制檢查(匯款金額加總超過限額)')
+                messages.error(request, '未通過洗錢防制檢查(匯款金額加總超過限額)')
+            elif count > 5:
+                log_alert(payer.name, '匯款', '未通過洗錢防制檢查(匯款次數超過警戒次數)')
+                messages.error(request, '未通過洗錢防制檢查(匯款次數超過警戒次數)')
+            elif llc > 5:
+                log_alert(payer.name, '匯款', '未通過洗錢防制檢查(多次匯款略低於限制金額)')
+                messages.error(request, '未通過洗錢防制檢查(多次匯款略低於限制金額)')
+
+           
+
             # 匯款, 由未完成到已完成
             if before_operation == TransactionRecord.OPERATION_REMITTANCE_NOT_COMPLETED and after_operation == TransactionRecord.OPERATION_REMITTANCE_COMPLETED:
                 transaction_record.to_account.deposit(

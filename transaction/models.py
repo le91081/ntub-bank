@@ -27,12 +27,14 @@ class TransactionRecord(models.Model):
     OPERATION_TRANSFER = 2
     OPERATION_REMITTANCE_NOT_COMPLETED = 3
     OPERATION_REMITTANCE_COMPLETED = 4
+    OPERATION_REMITTANCE_REJECT = 5
     OPERATION_CHOICES = (
         (OPERATION_DEPOSIT, '存入'),
         (OPERATION_WITHDRAWAL, '提出'),
         (OPERATION_TRANSFER, '轉帳'),
         (OPERATION_REMITTANCE_NOT_COMPLETED, '匯款(未完成)'),
-        (OPERATION_REMITTANCE_COMPLETED, '匯款(已完成)')
+        (OPERATION_REMITTANCE_COMPLETED, '匯款(已完成)'),
+        (OPERATION_REMITTANCE_REJECT, '匯款(拒絕)')
     )
     amount = models.DecimalField('金額', max_digits=9, decimal_places=2)
     operation = models.IntegerField('操作', choices=OPERATION_CHOICES, default=0)
@@ -62,7 +64,8 @@ class TransactionRecord(models.Model):
                               null=True,
                               blank=True,
                               max_length=100)
-    date = models.DateTimeField('交易時間', default=NOW.strftime("%Y-%m-%d %H:%M:%S"))
+    date = models.DateTimeField(
+        '交易時間', default=NOW.strftime("%Y-%m-%d %H:%M:%S"))
     day = models.DateTimeField(
         '時間維度(日)', default=NOW.date().strftime("%Y-%m-%d"), null=True, blank=True)
     time = models.TimeField(
