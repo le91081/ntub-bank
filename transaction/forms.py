@@ -3,7 +3,7 @@ from .models import TransactionRecord
 
 
 class TransactionRecordForm(forms.ModelForm):
-    usage = forms.CharField(label='資金用途', widget=forms.Textarea)
+    #usage = forms.CharField(label='資金用途', widget=forms.Textarea)
 
     class Meta:
         model = TransactionRecord

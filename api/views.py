@@ -374,6 +374,8 @@ def remittance(request):
             transaction_record.user = None
             transaction_record.date = datetime.datetime.now()
             transaction_record.remark = payer.name
+            transaction_record.funds = params['payer_funds']
+            transaction_record.usage = params['payer_usage']
             transaction_record.save()
 
         return common_response(data)
