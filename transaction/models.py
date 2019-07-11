@@ -65,11 +65,11 @@ class TransactionRecord(models.Model):
                               blank=True,
                               max_length=100)
     date = models.DateTimeField(
-        '交易時間', default=NOW.strftime("%Y-%m-%d %H:%M:%S"))
+        '交易時間', default=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     day = models.DateTimeField(
-        '時間維度(日)', default=NOW.date().strftime("%Y-%m-%d"), null=True, blank=True)
+        '時間維度(日)', default=datetime.now().date().strftime("%Y-%m-%d"), null=True, blank=True)
     time = models.TimeField(
-        '時間維度(時)', default=NOW.time().strftime("%H:%M:%S"), null=True, blank=True)
+        '時間維度(時)', default=datetime.now().time().strftime("%H:%M:%S"), null=True, blank=True)
     isImport = models.IntegerField('匯入識別', default=0,
                                    validators=[
                                        MaxValueValidator(1),

@@ -8,6 +8,7 @@ from .models import Payer, TransactionRecord
 from .forms import TransactionRecordForm
 from alertlog.models import AlertLog
 from blacklist.models import Blacklist
+from preset.models import Preset
 from core.service import advan_service
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
@@ -15,8 +16,7 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import time
 
-LIMIT_MONEY = 500000
-
+LIMIT_MONEY = Preset.objects.get(id=1).value
 
 @login_required
 def index(request):
@@ -78,15 +78,16 @@ def edit(request, pk):
             after_operation = form.cleaned_data['operation']  # 修改後的operation
             if before_operation == TransactionRecord.OPERATION_REMITTANCE_NOT_COMPLETED and after_operation == TransactionRecord.OPERATION_REMITTANCE_REJECT:
                 form.save()
+                log_alert(payer.name, '匯款', '拒絕匯款')
                 messages.success(request, '更新成功')
                 return redirect('transaction:index')
 
-
-            # 審查匯款金額是否超過50萬
-            if transaction_record.amount > LIMIT_MONEY:
-                log_alert(payer.name, '匯款', '匯款金額超過50萬且未通過KYC審查')
-                messages.error(request, '匯款金額超過50萬且未通過KYC審查')
-                return redirect('transaction:index')
+            # # 審查匯款金額是否超過50萬
+            # print("限額", LIMIT_MONEY)
+            # if transaction_record.amount > LIMIT_MONEY:
+            #     log_alert(payer.name, '匯款', '匯款金額超過50萬且未通過KYC審查')
+            #     messages.error(request, '匯款金額超過50萬且未通過KYC審查')
+            #     return redirect('transaction:index')
 
             # 黑名單審查
             for man in blacklist:
@@ -103,17 +104,15 @@ def edit(request, pk):
             money, count = get_recent_money_sum(5, payer.id)
             llc = get_money_count_by_month(5, payer.id)
             print(money, count, llc)
-            if (money + transaction_record.amount) > (LIMIT_MONEY*2):
+            if (money + transaction_record.amount) > Preset.objects.get(id=3).value:
                 log_alert(payer.name, '匯款', '未通過洗錢防制檢查(匯款金額加總超過限額)')
                 messages.error(request, '未通過洗錢防制檢查(匯款金額加總超過限額)')
-            elif count > 5:
+            if count > Preset.objects.get(id=5).value:
                 log_alert(payer.name, '匯款', '未通過洗錢防制檢查(匯款次數超過警戒次數)')
                 messages.error(request, '未通過洗錢防制檢查(匯款次數超過警戒次數)')
-            elif llc > 5:
+            if llc > Preset.objects.get(id=7).value:
                 log_alert(payer.name, '匯款', '未通過洗錢防制檢查(多次匯款略低於限制金額)')
                 messages.error(request, '未通過洗錢防制檢查(多次匯款略低於限制金額)')
-
-           
 
             # 匯款, 由未完成到已完成
             if before_operation == TransactionRecord.OPERATION_REMITTANCE_NOT_COMPLETED and after_operation == TransactionRecord.OPERATION_REMITTANCE_COMPLETED:
@@ -126,17 +125,20 @@ def edit(request, pk):
     monitor_info = {}
     # 取得近5秒的監視器畫面
     timeslot_end = time.time() * 1000  # 轉毫秒
-    timeslot_start = timeslot_end - 10000  # 十秒前
-    #json = advan_service.face_recognition_event(timeslot_start, timeslot_end)
+    timeslot_start = timeslot_end - 60000  # 十秒前
+    json = advan_service.face_recognition_event(timeslot_start, timeslot_end)
+    print("JSON : ", json['status'])
+    if json['status'] == 'SUCCESS':
 
-    # if json['status'] == 'SUCCESS':
-    #     timeslot_list = json['timeslot']  # 看要不要先依照時間排序抓最新(這邊沒做)
-    #     if timeslot_list is not None:  # 不是空的
-    #         timeslot = timeslot_list[0]  # 直接抓第一個物件
-    #         monitor_info['timestamp'] = datetime.fromtimestamp(
-    #             timeslot['timestamp'] / 1000)  # 時間
-    #         monitor_info['snapshot'] = timeslot['snapshot']  # 當下畫面
-    #         monitor_info['faces'] = timeslot['faces']  # 臉
+        timeslot_list = json['timeslot']  # 看要不要先依照時間排序抓最新(這邊沒做)
+        print(timeslot_list)
+        if timeslot_list is not None:  # 不是空的
+            # timeslot = timeslot_list[0]  # 直接抓第一個物件
+            timeslot = timeslot_list.pop()
+            monitor_info['timestamp'] = datetime.fromtimestamp(
+                timeslot['timestamp'] / 1000)  # 時間
+            monitor_info['snapshot'] = timeslot['snapshot']  # 當下畫面
+            monitor_info['faces'] = timeslot['faces']  # 臉
 
     return render(request, 'transaction/edit.html', {
         'form': form,
@@ -151,21 +153,26 @@ def show_payer(request, pk):
 
 
 def get_recent_money_sum(day, payer_id):
-    print(payer_id)
+    d = Preset.objects.get(id=2).value
+    d2 = Preset.objects.get(id=4).value
+    print("N日:", d, "N日:", d2)
     now = datetime.now()
     lst = TransactionRecord.objects.filter(
-        date__range=(now-timedelta(day), now), payer_id=payer_id, operation=4)
+        date__range=(now-timedelta(d), now), payer_id=payer_id, operation=4)
     total = sum(n.amount for n in lst)
     count = len(TransactionRecord.objects.filter(
-        date__range=(now-timedelta(day), now), payer_id=payer_id))
+        date__range=(now-timedelta(d2), now), payer_id=payer_id))
     return total, count
 
 
 def get_money_count_by_month(month, payer_id):
     now = datetime.now()
-    n_month_ago = now - relativedelta(months=month)
+    m = Preset.objects.get(id=6).value
+    money = Preset.objects.get(id=8).value
+    print("N月:", m, "總額:", money)
+    n_month_ago = now - relativedelta(months=m)
     count = len(TransactionRecord.objects.filter(date__range=(
-        n_month_ago, now), payer_id=payer_id, amount__gte=LIMIT_MONEY-100000))
+        n_month_ago, now), payer_id=payer_id, amount__gte=money))
     return count
 
 

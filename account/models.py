@@ -22,7 +22,7 @@ class Account(models.Model):
         (STATUS_ENABLE, '已啟用'),
     )
     balance = models.DecimalField(
-        '餘額', max_digits=11, decimal_places=2, default=0)
+        '餘額', max_digits=11, decimal_places=2, default=1000000)
     status = models.IntegerField(
         '帳戶狀態', choices=STATUS_CHOICES, default=STATUS_DISABLE)
     code = models.CharField('帳戶代碼', max_length=20, unique=True)

@@ -1,0 +1,23 @@
+{% extends 'layout.html' %}
+{% load bootstrap4 %}
+{% block main %}
+<h2>洗錢防制條件設定</h2>
+<hr>
+<table class="table table-striped" style="margin-top: 10px;">
+  <thead>
+    <tr>
+      <th>項目名稱</th>
+      <th>項目值</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for tr in preset_list %}
+    <tr>
+      <td><a href="{% url 'preset:edit' tr.id %}">{{ tr.columnName }}<a></td>
+      <td>{{ tr.value }}</td>
+
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

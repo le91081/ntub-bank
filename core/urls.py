@@ -15,7 +15,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.contrib.auth.views import (
-    LoginView, LogoutView, 
+    LoginView, LogoutView,
     PasswordResetView, PasswordResetConfirmView,
 )
 from django.shortcuts import redirect
@@ -48,8 +48,8 @@ urlpatterns = [
     path('login/', LoginView.as_view(**login_params), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('register/', register, name='register'),
-    path('password-reset/', 
-         PasswordResetView.as_view(**password_reset_params), 
+    path('password-reset/',
+         PasswordResetView.as_view(**password_reset_params),
          name='password_reset'),
     path('password-set/<uidb64>/<token>/',
          PasswordResetConfirmView.as_view(**password_set_params),
@@ -62,6 +62,6 @@ urlpatterns = [
     path('earlyknow/', include('earlyknow.urls')),
     path('api/', include('api.urls')),
     path('recognize/', include('recognize.urls')),
-    
+    path('preset/', include('preset.urls')),
     path('admin/', admin.site.urls),
 ] + static('images/', document_root=settings.IMAGE_ROOT)

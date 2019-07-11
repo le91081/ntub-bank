@@ -63,7 +63,7 @@ def customer_create(request):
         nationRatio = fuzz.partial_ratio(man.nationality, params['nation'])
         addrRatio = fuzz.partial_ratio(man.address, params['address'])
         print(nameRatio, addrRatio, nationRatio)
-        if (nameRatio > 70 or addrRatio > 80 or (nameRatio + nationRatio) > 160):
+        if (nameRatio > 70 or addrRatio > 80 or (nameRatio + nationRatio) > 170):
             log = AlertLog()
             log.name = params['name']
             log.operate = '開戶'
@@ -183,20 +183,19 @@ def customer_image_add(request, pk):
             customer_image.type = type
             customer_image.customer = customer
             customer_image.save()
-
             # 存監視器(沒有update image的api, 只能先Get, Remove, Add..=_=)
-            if type == CustomerImage.TYPE_SELFIE:  # 傳自拍照
+            if int(type) == int(CustomerImage.TYPE_SELFIE):  # 傳自拍照
+                print("monitor")
                 uuid_str = str(customer.uuid)
                 json = advan_service.get_face_images_by_uuid(uuid_str)
                 image_base64s = []
                 if json['status'] == 'SUCCESS':
                     image_base64s = json['pictures']
                     advan_service.remove_user(uuid_str)
-
                 image_base64 = image_utils.image_to_base64(abs_path)
                 image_base64s.append(image_base64)
                 advan_service.add_user(uuid_str, customer.name, image_base64s)
-
+            print("monitor out") 
             return common_response(data)
         else:
             return common_response(data, message='no file upload')

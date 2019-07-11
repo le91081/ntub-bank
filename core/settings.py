@@ -47,7 +47,8 @@ INSTALLED_APPS = [
     'recognize',
     'transaction',
     'blacklist',
-    'alertlog'
+    'alertlog',
+    'preset'
 ]
 
 MIDDLEWARE = [
